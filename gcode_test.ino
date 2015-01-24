@@ -19,18 +19,18 @@ void moveTo(float nx, float ny) {
   Serial.print(F(","));
   Serial.print(ny);
   Serial.print(F("\r\n"));
-  
+
   // Linear interp
   int dx = (nx - px) * X_STEPS_PER_MM;
   int dirX = dx>0?1:-1;
   int dy = (ny - py) * Y_STEPS_PER_MM;
   int dirY = dy>0?1:-1;
-  
+
   dx = abs(dx);
   dy = abs(dy);
-  
+
   int over = 0;
-  
+
   if(dx > dy) {
     for(int i = 0; i < dx; i++) {
       Serial.print("X");
@@ -40,7 +40,8 @@ void moveTo(float nx, float ny) {
         Serial.print("Y");
       }
     }
-  } else {
+  } 
+  else {
     for(int i = 0; i < dy; i++) {
       Serial.print("Y");
       over += dx;
@@ -61,25 +62,63 @@ void moveTo(float nx, float ny) {
   Serial.print("\r\n");
 }
 
+void spray(int head, int val) {
+  Serial.print(F("Spray "));
+  Serial.print(head);
+  Serial.print(F("Val "));
+  Serial.print(val);
+  Serial.print(F("\r\n"));
+}
+
+char * consumeWhitespace(char * buf) {
+  while(*buf != '\0' && (*buf == ' ' || *buf == '\t')) {
+    ++buf;
+  }
+  return buf;
+}
+
 void processG1(char * buf) {
   float nx;
   float ny;
-  
-  char * nbuf = strtok(buf, "X");
+
+  char * nbuf = strtok(buf, "XY");
   nx = atof(nbuf);
-  nbuf = strtok(0, "Y");
+  nbuf = strtok(0, "XY");
   ny = atof(nbuf);
   moveTo(nx, ny);
 }
 
-void processGCommand(char * buf) {
-  int id, consumed;
-  sscanf(buf, "%d%n", &id, &consumed);
+void processGCommand(char * buf, int id) {
   switch(id) {
   case 0:
   case 1:
     // G0 and G1 are both the same here
-    processG1(buf + consumed);
+    processG1(buf);
+    break;
+  default:
+    error();
+    break;
+  }
+}
+
+void processM700(char *buf) {
+  char * b = strtok(buf, "PS");
+  int head = atoi(b);
+  b = strtok(0, "PS");
+  int val = atoi(b);
+  
+  spray(head, val);
+}
+
+void processMCommand(char * buf, int id) {
+  switch(id) {
+  case 400:
+    //Finish movement command from image_to_gcod, since 
+    //we are syncronous here, ignore it
+    break;
+  case 700:
+    //spray
+    processM700(buf);
     break;
   default:
     error();
@@ -88,9 +127,17 @@ void processGCommand(char * buf) {
 }
 
 void processCommand() {
-  switch(cmdBuf[0]) {
+  char c;
+  int id, consumed;
+  sscanf(cmdBuf, "%c%d%n", &c, &id, &consumed);
+
+  char * args = consumeWhitespace(cmdBuf+consumed);
+  switch(c) {
   case 'G':
-    processGCommand(cmdBuf+1);
+    processGCommand(args, id);
+    break;
+  case 'M':
+    processMCommand(args, id);
     break;
   default:
     error();
@@ -123,6 +170,7 @@ void loop() {
       cmdBuf[cmdLoc++] = c;
     }
     if(cmdBuf[cmdLoc-1] ==';') {
+      Serial.print("\r\n");
       break;
     }
   }
@@ -133,4 +181,6 @@ void loop() {
     ready();
   }
 }
+
+
 
