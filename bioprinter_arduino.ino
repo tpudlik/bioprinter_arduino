@@ -1,5 +1,19 @@
 #include <stdio.h>
 
+//Y pins
+const int Y_MOTOR_PIN_1 = 4;
+const int Y_MOTOR_PIN_2 = 5;
+const int Y_MOTOR_PIN_3 = 6;
+const int Y_MOTOR_PIN_4 = 7;
+
+//X pins
+const int X_MOTOR_PIN_1 = 2;
+const int X_MOTOR_PIN_2 = 3;
+const int X_MOTOR_PIN_3 = 11;
+const int X_MOTOR_PIN_4 = 10;
+
+const int DELAY_TIME = 4;
+
 const int X_STEPS_PER_MM = 10;
 const int Y_STEPS_PER_MM = 10;
 
@@ -33,21 +47,41 @@ void moveTo(float nx, float ny) {
 
   if(dx > dy) {
     for(int i = 0; i < dx; i++) {
-      Serial.print("X");
+      if(dirX == 1) {
+        stepForward(1, 'X');
+      } 
+      else {
+        stepBackward(1, 'X');
+      }
       over += dy;
       if(over > dx) {
         over -= dx;
-        Serial.print("Y");
+        if(dirY == 1) {
+          stepForward(1, 'Y');
+        } 
+        else {
+          stepBackward(1, 'Y');
+        }
       }
     }
   } 
   else {
     for(int i = 0; i < dy; i++) {
-      Serial.print("Y");
+      if (dirY == 1) {
+        stepForward(1, 'Y');
+      } 
+      else {
+        stepBackward(1, 'Y');
+      }
       over += dx;
       if(over > dy) {
         over -= dy;
-        Serial.print("X");
+        if (dirX == 1) {
+          stepForward(1, 'X');
+        } 
+        else {
+          stepBackward(1, 'X');
+        }
       }
     }
   }
@@ -70,6 +104,7 @@ void spray(int head, int val) {
   Serial.print(F("\r\n"));
 }
 
+// GCode Interpreter
 char * consumeWhitespace(char * buf) {
   while(*buf != '\0' && (*buf == ' ' || *buf == '\t')) {
     ++buf;
@@ -106,7 +141,7 @@ void processM700(char *buf) {
   int head = atoi(b);
   b = strtok(0, "PS");
   int val = atoi(b);
-  
+
   spray(head, val);
 }
 
@@ -179,6 +214,99 @@ void loop() {
     cmdBuf[cmdLoc] = 0;
     processCommand();
     ready();
+  }
+}
+
+void stepForward(int steps, char xOrY){
+  int motorPin1;
+  int motorPin2;
+  int motorPin3;
+  int motorPin4;
+
+  if(xOrY == 'X' || xOrY == 'x'){
+    motorPin1 = X_MOTOR_PIN_1;
+    motorPin2 = X_MOTOR_PIN_2;
+    motorPin3 = X_MOTOR_PIN_3;
+    motorPin4 = X_MOTOR_PIN_4;
+  } 
+  else {
+    motorPin1 = Y_MOTOR_PIN_1;
+    motorPin2 = Y_MOTOR_PIN_2;
+    motorPin3 = Y_MOTOR_PIN_3;
+    motorPin4 = Y_MOTOR_PIN_4;
+  }
+
+  for (int i = 0; i < steps; i++){
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+    delay(DELAY_TIME);
+  }
+
+}
+
+void stepBackward(int steps, char xOrY){
+  int motorPin1;
+  int motorPin2;
+  int motorPin3;
+  int motorPin4;
+
+  if(xOrY == 'X' || xOrY == 'x'){
+    motorPin1 = X_MOTOR_PIN_1;
+    motorPin2 = X_MOTOR_PIN_2;
+    motorPin3 = X_MOTOR_PIN_3;
+    motorPin4 = X_MOTOR_PIN_4;
+  } 
+  else {
+    motorPin1 = Y_MOTOR_PIN_1;
+    motorPin2 = Y_MOTOR_PIN_2;
+    motorPin3 = Y_MOTOR_PIN_3;
+    motorPin4 = Y_MOTOR_PIN_4;
+  }
+
+  for (int i = 0; i < steps; i++){
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, HIGH);
+    digitalWrite(motorPin2, LOW);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, LOW);
+    digitalWrite(motorPin4, HIGH);
+    delay(DELAY_TIME);
+
+    digitalWrite(motorPin1, LOW);
+    digitalWrite(motorPin2, HIGH);
+    digitalWrite(motorPin3, HIGH);
+    digitalWrite(motorPin4, LOW);
+    delay(DELAY_TIME);
   }
 }
 
