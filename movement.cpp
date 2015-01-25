@@ -15,24 +15,24 @@ const int X_MOTOR_PINS[] = {
 
 const int DELAY_TIME = 4;
 
-const int X_STEPS_PER_MM = 10;
-const int Y_STEPS_PER_MM = 10;
+const int X_STEPS_PER_MM = 4;
+const int Y_STEPS_PER_MM = 4;
 
 const int COOLDOWN_TIME = 5000;
 const int COOLDOWN_STEPS = 250;
 
 const bool STEP_PATTERN[4][4] = {
   {
-    LOW, HIGH, HIGH, LOW    }
+    LOW, HIGH, HIGH, LOW      }
   ,
   {
-    LOW, HIGH, LOW, HIGH    }
+    LOW, HIGH, LOW, HIGH      }
   ,
   {
-    HIGH, LOW, LOW, HIGH    }
+    HIGH, LOW, LOW, HIGH      }
   ,
   {
-    HIGH, LOW, HIGH, LOW    }
+    HIGH, LOW, HIGH, LOW      }
   ,
 };
 
@@ -42,6 +42,13 @@ float px, py;
 Motor mx, my;
 int cooldownStep;
 
+void setPins(Motor* m) {
+  for(int i=0; i<4; i++) {
+    pinMode(m->pins[i], OUTPUT);
+    digitalWrite(m->pins[i], LOW);
+  }
+}
+
 void initMotors() {
   mx.pins = X_MOTOR_PINS;
   mx.curStep = 0;
@@ -49,6 +56,8 @@ void initMotors() {
   my.pins = Y_MOTOR_PINS;  
   my.curStep = 0;
 
+  setPins(&mx);
+  setPins(&my);
   cooldownStep = 0;
 }
 
@@ -62,6 +71,7 @@ void off(Motor *m, int cooldownTime) {
 void step(Motor *m, int steps, int dir) {
 
   for(int s=0; s<steps; s++) {
+    Serial.print("STEP");
     for(int i=0; i<4; i++) {
       digitalWrite(m->pins[i], STEP_PATTERN[m->curStep][i]);
     }
@@ -77,10 +87,6 @@ void step(Motor *m, int steps, int dir) {
     delay(DELAY_TIME);
 
     cooldownStep++;
-    if(cooldownStep >= COOLDOWN_STEPS) {
-      off(m, COOLDOWN_TIME);
-      cooldownStep = 0;
-    }
   }
 }
 
@@ -126,6 +132,14 @@ void moveTo(float nx, float ny) {
 
   px += float(dx) / X_STEPS_PER_MM * dirX;
   py += float(dy) / Y_STEPS_PER_MM * dirY;
+  
+  off(&mx, 0);
+  off(&my, 0);
+  if(cooldownStep >= COOLDOWN_STEPS) {
+    off(&mx, COOLDOWN_TIME/2);
+    off(&my, COOLDOWN_TIME/2);
+    cooldownStep = 0;
+  }
 
   Serial.print(F("\r\nEnding at "));
   Serial.print(px);
@@ -141,6 +155,7 @@ void spray(int head, int val) {
   Serial.print(val);
   Serial.print(F("\r\n"));
 }
+
 
 
 
