@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <InkShield.h>
+
+
 
 struct Motor {
   const int * pins;
@@ -59,6 +62,7 @@ void initMotors() {
   setPins(&mx);
   setPins(&my);
   cooldownStep = 0;
+
 }
 
 void off(Motor *m, int cooldownTime) {
@@ -148,13 +152,7 @@ void moveTo(float nx, float ny) {
   Serial.print("\r\n");
 }
 
-void spray(int head, int val) {
-  Serial.print(F("Spray "));
-  Serial.print(head);
-  Serial.print(F("Val "));
-  Serial.print(val);
-  Serial.print(F("\r\n"));
-}
+
 
 
 

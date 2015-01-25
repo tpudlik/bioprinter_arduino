@@ -2,6 +2,10 @@
 #include "gcode.h"
 #include "movement.h"
 
+#include <InkShield.h>
+
+InkShieldA0A3 InkShield(8);
+
 const int BAUD = 19200;
 const int BUF_SIZE = 64;
 
@@ -42,4 +46,14 @@ void loop() {
   }
 }
 
+void spray(int head, int val) {
+  Serial.print(F("Spray "));
+  Serial.print(head);
+  Serial.print(F("Val "));
+  Serial.print(val);
+  Serial.print(F("\r\n"));
+  //Ignores 'head' will only work for one inkshield currently
+  InkShield.spray_ink(val);
+  
+}
 
