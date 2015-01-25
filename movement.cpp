@@ -59,6 +59,11 @@ void initMotors() {
   setPins(&mx);
   setPins(&my);
   cooldownStep = 0;
+  
+  //assume table is at 0,0.
+  // TODO add end stops and find this
+  px = 0.0;
+  py = 0.0;
 }
 
 void off(Motor *m, int cooldownTime) {
@@ -121,11 +126,11 @@ void moveTo(float nx, float ny) {
   } 
   else {
     for(int i = 0; i < dy; i++) {
-      step(&mx, 1, dirX);
+      step(&my, 1, dirY);
       over += dx;
       if(over > dy) {
         over -= dy;
-        step(&my, 1, dirY);
+        step(&mx, 1, dirX);
       }
     }
   }
