@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "gcode.h"
+#include "movement.h"
 
 const int BAUD = 19200;
 const int BUF_SIZE = 64;
@@ -17,6 +18,7 @@ void ready() {
 
 void setup() {
   Serial.begin(BAUD);
+  initMotors();
   ready();
 }
 

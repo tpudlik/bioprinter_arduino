@@ -1,116 +1,86 @@
 #include <Arduino.h>
 
+struct Motor {
+  const int * pins;
+  int curStep;
+};
+
 //Y pins
-const int Y_MOTOR_PIN_1 = 4;
-const int Y_MOTOR_PIN_2 = 5;
-const int Y_MOTOR_PIN_3 = 6;
-const int Y_MOTOR_PIN_4 = 7;
+const int Y_MOTOR_PINS[] = {
+  4, 5, 6, 7};
 
 //X pins
-const int X_MOTOR_PIN_1 = 2;
-const int X_MOTOR_PIN_2 = 3;
-const int X_MOTOR_PIN_3 = 11;
-const int X_MOTOR_PIN_4 = 10;
+const int X_MOTOR_PINS[] = {
+  2, 3, 11, 10};
 
 const int DELAY_TIME = 4;
 
 const int X_STEPS_PER_MM = 10;
 const int Y_STEPS_PER_MM = 10;
 
+const int COOLDOWN_TIME = 5000;
+const int COOLDOWN_STEPS = 250;
+
+const bool STEP_PATTERN[4][4] = {
+  {
+    LOW, HIGH, HIGH, LOW    }
+  ,
+  {
+    LOW, HIGH, LOW, HIGH    }
+  ,
+  {
+    HIGH, LOW, LOW, HIGH    }
+  ,
+  {
+    HIGH, LOW, HIGH, LOW    }
+  ,
+};
+
 // Current location of print head
 float px, py;
 
+Motor mx, my;
+int cooldownStep;
 
-void stepForward(int steps, char xOrY){
-  int motorPin1;
-  int motorPin2;
-  int motorPin3;
-  int motorPin4;
+void initMotors() {
+  mx.pins = X_MOTOR_PINS;
+  mx.curStep = 0;
 
-  if(xOrY == 'X' || xOrY == 'x'){
-    motorPin1 = X_MOTOR_PIN_1;
-    motorPin2 = X_MOTOR_PIN_2;
-    motorPin3 = X_MOTOR_PIN_3;
-    motorPin4 = X_MOTOR_PIN_4;
-  } 
-  else {
-    motorPin1 = Y_MOTOR_PIN_1;
-    motorPin2 = Y_MOTOR_PIN_2;
-    motorPin3 = Y_MOTOR_PIN_3;
-    motorPin4 = Y_MOTOR_PIN_4;
-  }
+  my.pins = Y_MOTOR_PINS;  
+  my.curStep = 0;
 
-  for (int i = 0; i < steps; i++){
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    digitalWrite(motorPin3, HIGH);
-    digitalWrite(motorPin4, LOW);
-    delay(DELAY_TIME);
-
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, HIGH);
-    delay(DELAY_TIME);
-
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, HIGH);
-    delay(DELAY_TIME);
-
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, HIGH);
-    digitalWrite(motorPin4, LOW);
-    delay(DELAY_TIME);
-  }
-
+  cooldownStep = 0;
 }
 
-void stepBackward(int steps, char xOrY){
-  int motorPin1;
-  int motorPin2;
-  int motorPin3;
-  int motorPin4;
-
-  if(xOrY == 'X' || xOrY == 'x'){
-    motorPin1 = X_MOTOR_PIN_1;
-    motorPin2 = X_MOTOR_PIN_2;
-    motorPin3 = X_MOTOR_PIN_3;
-    motorPin4 = X_MOTOR_PIN_4;
-  } 
-  else {
-    motorPin1 = Y_MOTOR_PIN_1;
-    motorPin2 = Y_MOTOR_PIN_2;
-    motorPin3 = Y_MOTOR_PIN_3;
-    motorPin4 = Y_MOTOR_PIN_4;
+void off(Motor *m, int cooldownTime) {
+  for(int i=0; i<4; i++) {
+    digitalWrite(m->pins[i], LOW);
   }
+  delay(cooldownTime);
+}
 
-  for (int i = 0; i < steps; i++){
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, HIGH);
-    digitalWrite(motorPin4, LOW);
+void step(Motor *m, int steps, int dir) {
+
+  for(int s=0; s<steps; s++) {
+    for(int i=0; i<4; i++) {
+      digitalWrite(m->pins[i], STEP_PATTERN[m->curStep][i]);
+    }
+
+    m->curStep += dir;
+    if (m->curStep < 0) {
+      m->curStep = 3;
+    } 
+    else if (m->curStep > 3) {
+      m->curStep = 0;
+    }
+
     delay(DELAY_TIME);
 
-    digitalWrite(motorPin1, HIGH);
-    digitalWrite(motorPin2, LOW);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, HIGH);
-    delay(DELAY_TIME);
-
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    digitalWrite(motorPin3, LOW);
-    digitalWrite(motorPin4, HIGH);
-    delay(DELAY_TIME);
-
-    digitalWrite(motorPin1, LOW);
-    digitalWrite(motorPin2, HIGH);
-    digitalWrite(motorPin3, HIGH);
-    digitalWrite(motorPin4, LOW);
-    delay(DELAY_TIME);
+    cooldownStep++;
+    if(cooldownStep >= COOLDOWN_STEPS) {
+      off(m, COOLDOWN_TIME);
+      cooldownStep = 0;
+    }
   }
 }
 
@@ -135,41 +105,21 @@ void moveTo(float nx, float ny) {
 
   if(dx > dy) {
     for(int i = 0; i < dx; i++) {
-      if(dirX == 1) {
-        stepForward(1, 'X');
-      } 
-      else {
-        stepBackward(1, 'X');
-      }
+      step(&mx, 1, dirX);
       over += dy;
       if(over > dx) {
         over -= dx;
-        if(dirY == 1) {
-          stepForward(1, 'Y');
-        } 
-        else {
-          stepBackward(1, 'Y');
-        }
+        step(&my, 1, dirY);
       }
     }
   } 
   else {
     for(int i = 0; i < dy; i++) {
-      if (dirY == 1) {
-        stepForward(1, 'Y');
-      } 
-      else {
-        stepBackward(1, 'Y');
-      }
+      step(&mx, 1, dirX);
       over += dx;
       if(over > dy) {
         over -= dy;
-        if (dirX == 1) {
-          stepForward(1, 'X');
-        } 
-        else {
-          stepBackward(1, 'X');
-        }
+        step(&my, 1, dirY);
       }
     }
   }
@@ -191,6 +141,8 @@ void spray(int head, int val) {
   Serial.print(val);
   Serial.print(F("\r\n"));
 }
+
+
 
 
 
