@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <stdio.h>
 
+void initMotors();
 void moveTo(float nx, float ny);
 
 // Spray the ink
@@ -53,6 +54,10 @@ void processM700(char *buf) {
 
 void processMCommand(char * buf, int id) {
   switch(id) {
+  case 2:
+    // End of program, reset
+    initMotors();
+    break;
   case 400:
     //Finish movement command from image_to_gcod, since 
     //we are syncronous here, ignore it
@@ -84,4 +89,5 @@ void processCommand(char * cmd) {
     error();
   }
 }
+
 
